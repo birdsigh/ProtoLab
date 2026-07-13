@@ -44,7 +44,11 @@ export default {
       if (denied) return denied;
       return handleManage(request, env);
     }
-    if (path.startsWith("/settings")) return notFound();
+    // Only /settings and /settings/* are management-zone paths. Sibling
+    // slugs like /settings-foo are valid prototypes and must fall through
+    // to servePrototype (the Access app's coverage is path-segment based,
+    // so the edge doesn't intercept them either).
+    if (path.startsWith("/settings/")) return notFound();
 
     // --- Public ---
     if (path === "/") return serveGallery(env);

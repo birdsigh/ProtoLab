@@ -46,38 +46,59 @@ export function settingsPage(): Response {
 :root {
   color-scheme: light;
   --bg: #ffffff;
-  --fg: #1a1a1a;
-  --muted: #6b7280;
-  --border: #d9dce1;
-  --card: #f4f5f7;
-  --accent: #2563eb;
-  --danger: #b91c1c;
-  --ok: #15803d;
-  --warn: #b45309;
+  --fg: #1c2734;
+  --muted: #627080;
+  --border: #e4e8ed;
+  --card: #f7f9fb;
+  --accent: #17639f;
+  --accent-ink: #15395e;
+  --danger: #ab372c;
+  --ok: #2d6a46;
+  --warn: #7d5a10;
+  --accent-pale: #e6eff7;
+  --danger-pale: #f7e5e1;
+  --ok-pale: #e0efe6;
+  --warn-pale: #f7efd2;
+  --highlight: #d9e7f3;
+  --ring: rgba(23, 99, 159, 0.22);
+  --radius: 6px;
+  --shadow-sm: 0 1px 2px 0 rgba(23, 40, 69, 0.06);
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #131417;
-  --fg: #e7e7ea;
-  --muted: #9ba1ab;
-  --border: #34363c;
-  --card: #1d1f24;
-  --accent: #7aa7f7;
-  --danger: #f2938c;
-  --ok: #6fce8f;
-  --warn: #e0a75e;
+  --bg: #14181e;
+  --fg: #e4e8ee;
+  --muted: #94a0af;
+  --border: #2b323c;
+  --card: #1a2028;
+  --accent: #7fb2dd;
+  --accent-ink: #a8cce9;
+  --danger: #e08d83;
+  --ok: #7dc79a;
+  --warn: #d9b166;
+  --accent-pale: rgba(127, 178, 221, 0.13);
+  --danger-pale: rgba(224, 141, 131, 0.13);
+  --ok-pale: rgba(125, 199, 154, 0.13);
+  --warn-pale: rgba(217, 177, 102, 0.14);
+  --highlight: #2a4258;
+  --ring: rgba(127, 178, 221, 0.3);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
 }
 * { box-sizing: border-box; }
 body {
   margin: 0 auto;
-  padding: 24px 20px 64px;
+  padding: 28px 20px 64px;
   max-width: 900px;
   background: var(--bg);
   color: var(--fg);
-  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
+  font-variant-numeric: lining-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-h1 { font-size: 20px; margin: 0; }
+::selection { background: var(--highlight); color: var(--fg); }
+h1 { font-size: 21px; font-weight: 600; line-height: 1.2; margin: 0; }
 .page-head {
   display: flex;
   align-items: center;
@@ -95,52 +116,82 @@ img.logo-for-dark { display: none; }
 .theme-toggle .icon-sun { display: none; }
 :root[data-theme="dark"] .theme-toggle .icon-sun { display: inline; }
 :root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
-section { margin-bottom: 36px; }
+section { margin-bottom: 40px; }
 h2 {
-  font-size: 15px;
-  margin: 0 0 10px;
-  padding-bottom: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
 }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th {
   text-align: left;
   font-weight: 600;
+  font-size: 12px;
   color: var(--muted);
-  padding: 4px 8px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 td {
-  padding: 6px 8px;
+  padding: 8px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 td.num { white-space: nowrap; color: var(--muted); }
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-skip-ink: auto;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+a:hover { color: var(--accent-ink); text-decoration-thickness: 2px; }
+a:focus-visible {
+  outline: none;
+  border-radius: 2px;
+  box-shadow: 0 0 0 3px var(--ring);
+}
 code, .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
 }
 button {
   font: inherit;
-  font-size: 12px;
-  padding: 3px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 4px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--card);
+  border-radius: var(--radius);
+  background: var(--bg);
   color: var(--fg);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease;
 }
-button:hover { border-color: var(--accent); }
-button:disabled { opacity: 0.5; cursor: default; }
+button:hover { background: var(--card); border-color: var(--muted); }
+button:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+button:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
 button.danger { color: var(--danger); }
-button.danger:hover { border-color: var(--danger); }
+button.danger:hover {
+  background: var(--danger-pale);
+  border-color: var(--danger);
+}
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+button.primary:hover {
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
 }
 :root[data-theme="dark"] button.primary { color: #10131a; }
 .actions { white-space: nowrap; }
@@ -148,30 +199,32 @@ button.primary {
 .badge {
   display: inline-block;
   font-size: 11px;
-  padding: 1px 8px;
+  font-weight: 600;
+  padding: 2px 9px;
   border-radius: 999px;
-  border: 1px solid var(--border);
+  background: var(--card);
   color: var(--muted);
 }
-.badge.protected { color: var(--warn); border-color: var(--warn); }
-.badge.open { color: var(--ok); border-color: var(--ok); }
-.badge.revoked { color: var(--danger); border-color: var(--danger); }
-.badge.active { color: var(--ok); border-color: var(--ok); }
+.badge.protected { color: var(--warn); background: var(--warn-pale); }
+.badge.open, .badge.active { color: var(--ok); background: var(--ok-pale); }
+.badge.revoked { color: var(--danger); background: var(--danger-pale); }
 .err {
   display: none;
   margin: 8px 0;
-  padding: 7px 10px;
-  border: 1px solid var(--danger);
-  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--danger-pale);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius);
   color: var(--danger);
   font-size: 13px;
 }
 .err.show { display: block; }
 .note {
   margin: 8px 0;
-  padding: 7px 10px;
-  border: 1px solid var(--ok);
-  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--ok-pale);
+  border-left: 3px solid var(--ok);
+  border-radius: var(--radius);
   color: var(--ok);
   font-size: 13px;
 }
@@ -180,14 +233,33 @@ form.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 input[type="text"], input[type="password"] {
   font: inherit;
   font-size: 13px;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--bg);
   color: var(--fg);
+  box-shadow: var(--shadow-sm);
 }
+input[type="text"]:focus-visible, input[type="password"]:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+::placeholder { color: var(--muted); opacity: 0.8; }
 input.title-edit { width: 100%; font-size: 13px; padding: 2px 6px; }
-input[type="file"] { font-size: 12px; max-width: 240px; }
+/* The native file inputs are hidden; visible <button>s proxy .click() to
+   them so the pickers share the ordinary button styling. Styling the
+   ::file-selector-button pseudo is not reliable: Chromium resolves its
+   styles (custom properties, themed selectors, even light-dark()) against
+   a stale light-theme cascade under [data-theme="dark"]. */
+.file-name {
+  color: var(--muted);
+  font-size: 12px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .filepick { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
 td.title-cell { cursor: text; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 td.title-cell:hover { text-decoration: underline dotted; }
@@ -195,9 +267,9 @@ td.title-cell:hover { text-decoration: underline dotted; }
   display: none;
   margin-top: 10px;
   padding: 10px 12px;
-  background: var(--card);
-  border: 1px solid var(--warn);
-  border-radius: 8px;
+  background: var(--warn-pale);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius);
 }
 .token-reveal.show { display: block; }
 .token-reveal .tok {
@@ -215,11 +287,12 @@ td.title-cell:hover { text-decoration: underline dotted; }
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px 14px;
   margin-bottom: 8px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 8px;
+  box-shadow: var(--shadow-sm);
 }
 .pair .code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -267,10 +340,13 @@ td.title-cell:hover { text-decoration: underline dotted; }
   <form class="row" id="upload-form">
     <input type="text" id="upload-slug" placeholder="slug" autocomplete="off"
       spellcheck="false" maxlength="63" style="width:160px">
-    <span class="filepick">zip: <input type="file" id="upload-zip"
-      accept=".zip,application/zip"></span>
-    <span class="filepick">or folder: <input type="file" id="upload-folder"
-      webkitdirectory multiple></span>
+    <span class="filepick">zip: <button type="button"
+      id="upload-zip-btn">Choose file</button></span>
+    <span class="filepick">or folder: <button type="button"
+      id="upload-folder-btn">Choose folder</button></span>
+    <span class="file-name" id="upload-pick-name">nothing chosen</span>
+    <input type="file" id="upload-zip" accept=".zip,application/zip" hidden>
+    <input type="file" id="upload-folder" webkitdirectory multiple hidden>
     <button type="submit" class="primary" id="upload-btn">Deploy</button>
   </form>
   <p class="hint">A selected folder is zipped in the browser (stored, no
@@ -651,11 +727,29 @@ td.title-cell:hover { text-decoration: underline dotted; }
   var folderInput = $("upload-folder");
   var uploadBtn = $("upload-btn");
 
+  var pickName = $("upload-pick-name");
+
+  function updatePickName() {
+    if (zipInput.files.length) {
+      pickName.textContent = zipInput.files[0].name;
+    } else if (folderInput.files.length) {
+      var n = folderInput.files.length;
+      pickName.textContent = n + (n === 1 ? " file" : " files") + " from folder";
+    } else {
+      pickName.textContent = "nothing chosen";
+    }
+  }
+
+  $("upload-zip-btn").addEventListener("click", function () { zipInput.click(); });
+  $("upload-folder-btn").addEventListener("click", function () { folderInput.click(); });
+
   zipInput.addEventListener("change", function () {
     if (zipInput.files.length) folderInput.value = "";
+    updatePickName();
   });
   folderInput.addEventListener("change", function () {
     if (folderInput.files.length) zipInput.value = "";
+    updatePickName();
   });
 
   uploadForm.addEventListener("submit", function (ev) {
@@ -696,6 +790,7 @@ td.title-cell:hover { text-decoration: underline dotted; }
       slugInput.value = "";
       zipInput.value = "";
       folderInput.value = "";
+      updatePickName();
       return loadPrototypes();
     }).catch(function (e) {
       showErr(uploadErr, "Deploy failed: " + e.message);
