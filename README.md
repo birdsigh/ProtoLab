@@ -3,7 +3,7 @@
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://sprettynice.com/github/img/protolab-light.png">
       <source media="(prefers-color-scheme: light)" srcset="https://sprettynice.com/github/img/protolab-dark.png">
-      <img alt="ProtoLab" src="https://sprettynice.com/github/img/protolab-dark.png" width="420">
+      <img alt="ProtoLab" src="https://sprettynice.com/github/img/protolab-dark.png" width="280">
     </picture>
   </a>
 </p>
@@ -15,6 +15,8 @@ Prototype files live in R2, metadata in D1. The Worker serves the
 prototypes, a public gallery at `/`, and its own management page at
 `/settings` (behind Cloudflare Access). Deploying a prototype is one
 authenticated HTTP call from anywhere — no repo checkout, no wrangler.
+
+<img alt="ProtoLab Preview" src="https://sprettynice.com/github/img/protolab-mockup.png" style="max-width:100%;">
 
 Full design: [SPEC.md](SPEC.md). Deploy contract for agents/skills:
 [AGENTS.md](AGENTS.md). A ready-made client, the `deploy-prototype`
