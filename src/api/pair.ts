@@ -107,14 +107,22 @@ export async function handlePair(request: Request, env: Env): Promise<Response> 
       }
 
       // Single-use claim: the WHERE status = 'approved' guard makes this
-      // atomic — exactly one concurrent poller gets the token.
+      // atomic — exactly one concurrent poller gets the token. RETURNING
+      // yields post-update values, so token_plain must NOT be cleared in
+      // this statement (we'd read back the NULL we just wrote); flip the
+      // status alone, deliver the plaintext, then scrub it.
       const claimed = await env.DB.prepare(
-        "UPDATE pairings SET token_plain = NULL, status = 'claimed' " +
+        "UPDATE pairings SET status = 'claimed' " +
           "WHERE code = ? AND status = 'approved' RETURNING token_plain",
       )
         .bind(code)
         .first<{ token_plain: string | null }>();
       if (claimed?.token_plain) {
+        await env.DB.prepare(
+          "UPDATE pairings SET token_plain = NULL WHERE code = ?",
+        )
+          .bind(code)
+          .run();
         return json({ token: claimed.token_plain });
       }
       // Raced by another poller — fall through to gone.

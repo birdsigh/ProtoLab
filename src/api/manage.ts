@@ -10,6 +10,7 @@
 //   GET    /settings/api/tokens
 //   POST   /settings/api/tokens                       { name } -> plaintext once
 //   DELETE /settings/api/tokens/<id>                  (revoke)
+//   PUT    /settings/api/tokens/<id>/name             { name }
 //   GET    /settings/api/pairings                     (pending)
 //   POST   /settings/api/pairings/<code>/approve
 //   POST   /settings/api/pairings/<code>/deny
@@ -62,6 +63,10 @@ export async function handleManage(request: Request, env: Env): Promise<Response
     }
     if (seg.length === 2 && second !== undefined) {
       if (method === "DELETE") return revokeToken(env, second);
+      return methodNotAllowed();
+    }
+    if (seg.length === 3 && second !== undefined && third === "name") {
+      if (method === "PUT") return renameToken(request, env, second);
       return methodNotAllowed();
     }
     return notFound();
@@ -232,6 +237,23 @@ async function createToken(request: Request, env: Env): Promise<Response> {
   const name = raw.trim().slice(0, MAX_TOKEN_NAME_LEN);
   const { plaintext, id } = await mintToken(env, name);
   return json({ id, name, token: plaintext });
+}
+
+async function renameToken(request: Request, env: Env, idSeg: string): Promise<Response> {
+  const id = Number(idSeg);
+  if (!Number.isSafeInteger(id)) return notFound("unknown token");
+  const body = await readJson(request);
+  const raw = body?.["name"];
+  if (typeof raw !== "string" || raw.trim().length === 0) {
+    return json({ error: "name must be a non-empty string" }, 400);
+  }
+  const name = raw.trim().slice(0, MAX_TOKEN_NAME_LEN);
+  // Renaming a revoked token is allowed — the name is just a label.
+  const res = await env.DB.prepare("UPDATE tokens SET name = ?1 WHERE id = ?2")
+    .bind(name, id)
+    .run();
+  if (res.meta.changes === 0) return notFound("unknown token");
+  return json({ ok: true, name });
 }
 
 async function revokeToken(env: Env, idSeg: string): Promise<Response> {

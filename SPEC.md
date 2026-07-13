@@ -1,7 +1,5 @@
 # ProtoLab — Specification
 
-A fresh build, in a new empty repo.
-
 ## Summary
 
 ProtoLab is a single Cloudflare Worker service that hosts throwaway HTML prototypes. Prototype content lives in R2, metadata in D1. The Worker serves the prototypes, a public gallery, and its own management page. Deploys are additive HTTP calls against an API — no local checkout of anything, no sync-down/copy-up. The repo holds only the service (Worker code, management UI, schema, setup scripts); prototype content never touches git.
@@ -95,7 +93,7 @@ All non-GET requests must additionally carry `X-ProtoLab: 1` (CSRF guard). Acces
 - `PUT /settings/api/prototypes/<slug>/title` — body `{ title }`.
 - `PUT /settings/api/prototypes/<slug>/password` — set password (salted PBKDF2 hash; see Prototype passwords).
 - `DELETE /settings/api/prototypes/<slug>/password` — back to open.
-- `GET /settings/api/tokens`, `POST /settings/api/tokens` (manual mint, named), `DELETE /settings/api/tokens/<id>` (revoke).
+- `GET /settings/api/tokens`, `POST /settings/api/tokens` (manual mint, named), `DELETE /settings/api/tokens/<id>` (revoke), `PUT /settings/api/tokens/<id>/name` (rename, body `{ name }`).
 - `GET /settings/api/pairings` (pending), `POST /settings/api/pairings/<code>/approve`, `POST /settings/api/pairings/<code>/deny`.
 
 ### Zone 3 — pairing (unauthenticated, rate-limited)
@@ -126,7 +124,7 @@ Single page served by the Worker (static asset or inline; no build step preferre
 
 No rename feature. Renames are out of scope permanently (R2 has no rename; stable URLs are the product).
 
-## Deploy skill contract (`deploy-prototype`, lives in NiceSkills)
+## Deploy skill contract (`deploy-prototype`, ships separately as a client skill — [here](https://github.com/birdsigh/skills))
 
 The skill is a thin client over Zone 1. No repo clone, no wrangler, no Cloudflare auth.
 
@@ -172,7 +170,7 @@ Also check `./.protolab` in the working directory before giving up (for sandboxe
 - Verbs: deploy, remove (calls DELETE), list labs, add lab (pair), remove lab (local config edit only — token revocation happens on that lab's settings page), set default.
 - Static HTML only. Backend, auth, database, or build steps → wrong tool; say so and stop.
 
-## Repo layout (new, empty folder)
+## Repo layout
 
 ```
 protolab/
@@ -187,13 +185,14 @@ protolab/
 ├── schema.sql            # D1 migrations
 ├── scripts/
 │   └── setup.sh          # guided, idempotent; --check mode
-├── wrangler.toml         # R2 + D1 + rate-limit bindings, routes
+├── wrangler.toml.example # R2 + D1 + rate-limit bindings, routes template;
+│                         # setup.sh copies it to gitignored wrangler.toml
 ├── SPEC.md               # this document
 ├── AGENTS.md             # deploy contract (thin: config resolution + API)
 └── README.md
 ```
 
-Secrets (`COOKIE_SECRET`) via `wrangler secret put`, never in the repo. Repo can stay public.
+Secrets (`COOKIE_SECRET`) via `wrangler secret put`, never in the repo. `wrangler.toml` is gitignored since it accumulates deployment-specific values (database id, domain, Access AUD); the committed `wrangler.toml.example` is the template. Repo can stay public.
 
 ## Setup story
 
@@ -219,7 +218,7 @@ Secrets (`COOKIE_SECRET`) via `wrangler secret put`, never in the repo. Repo can
 
 Rename/redirects. Prototype version history. Server-side rendering, backends, or build steps for prototypes. Multi-user roles (Access policy decides who's an admin; everyone past Access is equal). Public gallery listing of protected slugs.
 
-## Defaults adopted (flag if you disagree)
+## Defaults adopted
 
 - Upload cap 25 MB, 500 entries; password cookie 7 days; pairing TTL and claim window 5 minutes; pairing rate limits 5/min/IP (create) and 60/min/IP (poll).
 - PBKDF2-SHA-256, 100,000 iterations, for prototype passwords.

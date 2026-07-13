@@ -1,4 +1,14 @@
-# ProtoLab
+<p>
+  <a href="https://sprettynice.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://sprettynice.com/github/img/protolab-light.png">
+      <source media="(prefers-color-scheme: light)" srcset="https://sprettynice.com/github/img/protolab-dark.png">
+      <img alt="ProtoLab" src="https://sprettynice.com/github/img/protolab-dark.png" width="420">
+    </picture>
+  </a>
+</p>
+
+<p align="center">A single deploy target for throwaway prototypes and artefacts, served through Cloudflare R2</p>
 
 A single Cloudflare Worker that hosts throwaway HTML prototypes.
 Prototype files live in R2, metadata in D1. The Worker serves the
@@ -7,7 +17,8 @@ prototypes, a public gallery at `/`, and its own management page at
 authenticated HTTP call from anywhere — no repo checkout, no wrangler.
 
 Full design: [SPEC.md](SPEC.md). Deploy contract for agents/skills:
-[AGENTS.md](AGENTS.md).
+[AGENTS.md](AGENTS.md). A ready-made client, the `deploy-prototype`
+skill, ships separately in [birdsigh/skills](https://github.com/birdsigh/skills).
 
 ## Requirements
 
@@ -53,11 +64,19 @@ Or a single file: send it with `Content-Type: text/html` and it becomes
 ## Repo layout
 
 ```
-src/            Worker: router, auth, API handlers, serving, settings UI
-schema.sql      D1 schema (idempotent)
-scripts/        setup.sh (guided setup + --check verification)
-wrangler.toml   bindings and routes
+src/                   Worker: router, auth, API handlers, serving, settings UI
+test/                  vitest unit tests (fake R2/D1, no wrangler needed)
+schema.sql             D1 schema (idempotent)
+scripts/               setup.sh (guided setup + --check verification)
+wrangler.toml.example  bindings and routes template
 ```
 
-Secrets are never in the repo (`wrangler secret put COOKIE_SECRET`);
-prototype content never touches git.
+`setup.sh` copies `wrangler.toml.example` to `wrangler.toml`, which is
+gitignored — it accumulates deployment-specific values (database id,
+custom domain, Access team domain + AUD). Secrets are never in the repo
+(`wrangler secret put COOKIE_SECRET`); prototype content never touches
+git.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

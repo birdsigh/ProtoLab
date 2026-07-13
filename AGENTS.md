@@ -3,6 +3,10 @@
 For agents deploying prototypes TO a running ProtoLab. Deploying ProtoLab
 itself is wrangler from this repo — a different verb; see README.md.
 
+This contract is implemented by the `deploy-prototype` skill in
+[birdsigh/skills](https://github.com/birdsigh/skills) — install that
+rather than reimplementing the flow below.
+
 Static HTML only. Backend, auth, database, or build steps → wrong tool;
 say so and stop.
 

@@ -68,6 +68,48 @@ export class FakeDB {
   }
 }
 
+// D1-shaped adapter over real SQLite (node:sqlite, in-memory), loaded with
+// the production schema. Use this instead of FakeDB whenever the code under
+// test depends on actual SQL semantics (RETURNING, WHERE guards, atomic
+// claims) — FakeDB only records calls and returns canned values, so it
+// silently passes queries that are semantically wrong.
+import { DatabaseSync } from "node:sqlite";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+export class SqliteD1 {
+  /** Escape hatch for tests to seed/inspect rows directly. */
+  raw: DatabaseSync;
+
+  constructor() {
+    this.raw = new DatabaseSync(":memory:");
+    this.raw.exec(readFileSync(join(__dirname, "..", "schema.sql"), "utf8"));
+  }
+
+  prepare(sql: string) {
+    const raw = this.raw;
+    const make = (args: unknown[]) => ({
+      async run() {
+        const stmt = raw.prepare(sql);
+        const res = stmt.run(...(args as never[]));
+        return { meta: { changes: Number(res.changes) }, results: [] };
+      },
+      async first() {
+        const stmt = raw.prepare(sql);
+        return (stmt.get(...(args as never[])) as unknown) ?? null;
+      },
+      async all() {
+        const stmt = raw.prepare(sql);
+        return { results: stmt.all(...(args as never[])) as unknown[] };
+      },
+    });
+    return {
+      bind: (...args: unknown[]) => make(args),
+      ...make([]),
+    };
+  }
+}
+
 export function fakeEnv(overrides: Record<string, unknown> = {}) {
   return {
     DB: new FakeDB(),

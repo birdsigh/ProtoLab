@@ -1,6 +1,9 @@
 node_modules/
 .wrangler/
 .dev.vars
+# deployment-specific values (database id, domain, Access AUD) — copied
+# from wrangler.toml.example by scripts/setup.sh
+wrangler.toml
 .DS_Store
 .protolab
 *.log

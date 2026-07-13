@@ -26,29 +26,38 @@ if [[ "${1:-}" == "--check" ]]; then
   BASE_URL="${BASE_URL%/}"
   failures=0
 
+  # curl must not kill the script under set -e (e.g. DNS/TLS still
+  # provisioning on a fresh custom domain) — map transport errors to 000.
+  probe() { local c; c=$(curl -s -o /dev/null -w '%{http_code}' "$1") || c="000"; echo "$c"; }
+
   say "checking $BASE_URL"
 
   # /settings must redirect to Access login when unauthenticated
-  code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/settings")
+  code=$(probe "$BASE_URL/settings")
   if [[ "$code" == "302" ]]; then ok "/settings redirects to Access login"; else
-    fail "/settings returned $code (expected 302 to Access) — management UI may be OPEN"; ((failures++)); fi
+    fail "/settings returned $code (expected 302 to Access) — management UI may be OPEN"; failures=$((failures+1)); fi
 
   # management API must never return data unauthenticated
-  body_code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/settings/api/prototypes")
+  body_code=$(probe "$BASE_URL/settings/api/prototypes")
   if [[ "$body_code" == "302" || "$body_code" == "403" ]]; then
     ok "/settings/api/prototypes denied ($body_code)"
   else
-    fail "/settings/api/prototypes returned $body_code — management API may be OPEN"; ((failures++)); fi
+    fail "/settings/api/prototypes returned $body_code — management API may be OPEN"; failures=$((failures+1)); fi
 
   # deploy API requires a token
-  code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/api/health")
+  code=$(probe "$BASE_URL/api/health")
   if [[ "$code" == "401" ]]; then ok "/api/health returns 401 without a token"; else
-    fail "/api/health returned $code (expected 401)"; ((failures++)); fi
+    fail "/api/health returned $code (expected 401)"; failures=$((failures+1)); fi
 
   # gallery is public
-  code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/")
+  code=$(probe "$BASE_URL/")
   if [[ "$code" == "200" ]]; then ok "/ serves the gallery"; else
-    fail "/ returned $code (expected 200)"; ((failures++)); fi
+    fail "/ returned $code (expected 200)"; failures=$((failures+1)); fi
+
+  if [[ "$code" == "000" ]]; then
+    echo "  (000 = could not connect at all — a freshly attached custom domain"
+    echo "   can take a minute or two to provision DNS + TLS; retry shortly)"
+  fi
 
   if (( failures > 0 )); then
     fail "$failures check(s) failed — setup is NOT done"
@@ -59,7 +68,18 @@ if [[ "${1:-}" == "--check" ]]; then
 fi
 
 # ---------------------------------------------------------------- scripted
-command -v wrangler >/dev/null || { fail "wrangler not found — npm install first"; exit 1; }
+# Use the repo-local wrangler via npx so this works whether invoked as
+# `npm run setup` or `scripts/setup.sh` directly.
+[ -d node_modules ] || { fail "node_modules missing — run: npm install"; exit 1; }
+npx --no-install wrangler --version >/dev/null 2>&1 || { fail "wrangler not installed — run: npm install"; exit 1; }
+wrangler() { npx --no-install wrangler "$@"; }
+
+# wrangler.toml is gitignored (it accumulates deployment-specific values:
+# database id, domain, Access AUD); bootstrap it from the template.
+if [[ ! -f wrangler.toml ]]; then
+  cp wrangler.toml.example wrangler.toml
+  ok "created wrangler.toml from wrangler.toml.example"
+fi
 
 say "R2 bucket '$BUCKET_NAME'"
 if wrangler r2 bucket list 2>/dev/null | grep -q "$BUCKET_NAME"; then

@@ -1,3 +1,6 @@
+# Template for wrangler.toml — the real file is gitignored because it
+# carries deployment-specific values (database id, domain, Access AUD).
+# scripts/setup.sh copies this into place on first run.
 name = "protolab"
 main = "src/index.ts"
 compatibility_date = "2026-07-01"
@@ -15,19 +18,22 @@ database_id = "REPLACED_BY_SETUP_SH"
 binding = "BUCKET"
 bucket_name = "protolab"
 
-# Workers rate-limiting bindings (require paid plan).
+# Worst-case legit request is inflating a zip to the 100 MB decompressed
+# cap (~1-2s CPU in fflate) plus PBKDF2 (~100ms); 10s is 5x headroom.
+[limits]
+cpu_ms = 10000
+
+# Workers rate-limiting bindings (require paid plan; wrangler >= 4.36).
 # 5 pairing requests per minute per IP:
-[[unsafe.bindings]]
+[[ratelimits]]
 name = "PAIR_RATE_LIMIT"
-type = "ratelimit"
 namespace_id = "1001"
 simple = { limit = 5, period = 60 }
 
 # 60 pairing polls per minute per IP (legit pollers do ~30/min; this
 # mainly blocks code brute-forcing):
-[[unsafe.bindings]]
+[[ratelimits]]
 name = "PAIR_POLL_RATE_LIMIT"
-type = "ratelimit"
 namespace_id = "1002"
 simple = { limit = 60, period = 60 }
 
