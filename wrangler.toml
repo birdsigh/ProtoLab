@@ -1,0 +1,40 @@
+name = "protolab"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+
+# Attach after the custom domain exists on your zone (required — Access
+# cannot protect *.workers.dev):
+# routes = [{ pattern = "lab.example.com", custom_domain = true }]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "protolab"
+database_id = "REPLACED_BY_SETUP_SH"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "protolab"
+
+# Workers rate-limiting bindings (require paid plan).
+# 5 pairing requests per minute per IP:
+[[unsafe.bindings]]
+name = "PAIR_RATE_LIMIT"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 5, period = 60 }
+
+# 60 pairing polls per minute per IP (legit pollers do ~30/min; this
+# mainly blocks code brute-forcing):
+[[unsafe.bindings]]
+name = "PAIR_POLL_RATE_LIMIT"
+type = "ratelimit"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }
+
+[vars]
+# Cloudflare Access team domain + application AUD, needed for JWT
+# verification. Set after creating the Access app.
+ACCESS_TEAM_DOMAIN = "REPLACE_ME.cloudflareaccess.com"
+ACCESS_AUD = "REPLACE_ME"
+
+# Secrets (never here): COOKIE_SECRET via `wrangler secret put COOKIE_SECRET`
