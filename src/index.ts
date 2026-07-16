@@ -11,6 +11,7 @@ import { handleDeploy } from "./api/deploy";
 import { handleManage } from "./api/manage";
 import { handlePair } from "./api/pair";
 import { requireAccessJwt } from "./auth/access-jwt";
+import { serveFavicon } from "./favicon";
 import { serveGallery, servePrototype } from "./serve";
 import { settingsPage } from "./settings";
 
@@ -52,7 +53,10 @@ export default {
 
     // --- Public ---
     if (path === "/") return serveGallery(env);
-    if (path === "/favicon.ico" || path === "/robots.txt") return notFound();
+    // Origin-level favicon: also covers prototype pages, since browsers
+    // fall back to /favicon.ico when a page declares no icon of its own.
+    if (path === "/favicon.ico") return serveFavicon();
+    if (path === "/robots.txt") return notFound();
 
     return servePrototype(request, env);
   },

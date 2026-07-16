@@ -19,6 +19,7 @@ export function settingsPage(): Response {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="/favicon.ico">
 <title>ProtoLab &mdash; Settings</title>
 <script>
 // Resolve theme before first paint: stored choice (if under a year old)
