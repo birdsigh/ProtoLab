@@ -29,6 +29,24 @@ function rename(env: ReturnType<typeof fakeEnv>, id: string | number, body: unkn
   );
 }
 
+function revoke(env: ReturnType<typeof fakeEnv>, id: string | number) {
+  return handleManage(
+    new Request(`${BASE}/settings/api/tokens/${id}`, { method: "DELETE" }),
+    env,
+  );
+}
+
+const nonCanonicalIds = [
+  "abc",
+  "1.5",
+  "0",
+  "-1",
+  "+1",
+  "1e0",
+  "01",
+  "9007199254740992",
+];
+
 describe("token rename", () => {
   let db: SqliteD1;
   let env: ReturnType<typeof fakeEnv>;
@@ -68,9 +86,13 @@ describe("token rename", () => {
     expect(row.name).toBe("old-name");
   });
 
-  it("404s on unknown or non-integer ids", async () => {
+  it("404s on an unknown id", async () => {
     expect((await rename(env, 999, { name: "x" })).status).toBe(404);
-    expect((await rename(env, "abc", { name: "x" })).status).toBe(404);
+  });
+
+  it.each(nonCanonicalIds)("404s on non-canonical id %s", async (id) => {
+    seedToken(db);
+    expect((await rename(env, id, {})).status).toBe(404);
   });
 
   it("rejects other methods on /name", async () => {
@@ -80,5 +102,30 @@ describe("token rename", () => {
       env,
     );
     expect(res.status).toBe(405);
+  });
+});
+
+describe("token revoke", () => {
+  let db: SqliteD1;
+  let env: ReturnType<typeof fakeEnv>;
+
+  beforeEach(() => {
+    db = new SqliteD1();
+    env = fakeEnv({ DB: db });
+  });
+
+  it("revokes a token", async () => {
+    const id = seedToken(db);
+    const res = await revoke(env, id);
+    expect(res.status).toBe(200);
+    const row = db.raw.prepare("SELECT revoked_at FROM tokens WHERE id = ?").get(id) as {
+      revoked_at: string | null;
+    };
+    expect(row.revoked_at).not.toBeNull();
+  });
+
+  it.each(nonCanonicalIds)("404s on non-canonical id %s", async (id) => {
+    seedToken(db);
+    expect((await revoke(env, id)).status).toBe(404);
   });
 });

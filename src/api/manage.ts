@@ -23,6 +23,12 @@ import { hashPassword, newNonce } from "../auth/password-cookie";
 
 const MAX_TOKEN_NAME_LEN = 128;
 
+function parseTokenId(segment: string): number | null {
+  if (!/^[1-9]\d*$/.test(segment)) return null;
+  const id = Number(segment);
+  return Number.isSafeInteger(id) ? id : null;
+}
+
 export async function handleManage(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname.slice("/settings/api".length);
@@ -239,8 +245,8 @@ async function createToken(request: Request, env: Env): Promise<Response> {
 }
 
 async function renameToken(request: Request, env: Env, idSeg: string): Promise<Response> {
-  const id = Number(idSeg);
-  if (!Number.isSafeInteger(id)) return notFound("unknown token");
+  const id = parseTokenId(idSeg);
+  if (id === null) return notFound("unknown token");
   const body = await readJson(request);
   const raw = body?.["name"];
   if (typeof raw !== "string" || raw.trim().length === 0) {
@@ -256,8 +262,8 @@ async function renameToken(request: Request, env: Env, idSeg: string): Promise<R
 }
 
 async function revokeToken(env: Env, idSeg: string): Promise<Response> {
-  const id = Number(idSeg);
-  if (!Number.isSafeInteger(id)) return notFound("unknown token");
+  const id = parseTokenId(idSeg);
+  if (id === null) return notFound("unknown token");
   const res = await env.DB.prepare(
     "UPDATE tokens SET revoked_at = ?1 WHERE id = ?2 AND revoked_at IS NULL",
   )
