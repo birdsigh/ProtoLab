@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Cloudflare Worker that hosts throwaway HTML prototypes (R2 + D1)",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",

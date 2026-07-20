@@ -29,7 +29,7 @@ skill, ships separately in [birdsigh/skills](https://github.com/birdsigh/skills)
   rate-limiting binding used for pairing requires paid.
 - A custom domain on a Cloudflare zone (Access cannot protect
   `*.workers.dev`).
-- Node + npm, `wrangler login`.
+- Node.js 22.13.0 or newer + npm, `wrangler login`.
 
 ## Setup
 
