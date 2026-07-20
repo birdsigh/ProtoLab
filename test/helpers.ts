@@ -8,6 +8,9 @@ export interface StoredObject {
 
 export class FakeBucket {
   store = new Map<string, StoredObject>();
+  listCalls: { prefix: string; cursor?: string }[] = [];
+
+  constructor(private readonly listPageSize = Number.POSITIVE_INFINITY) {}
 
   async put(
     key: string,
@@ -22,10 +25,15 @@ export class FakeBucket {
     truncated: boolean;
     cursor?: string;
   }> {
-    const objects = [...this.store.keys()]
-      .filter((k) => k.startsWith(opts.prefix))
+    this.listCalls.push(opts);
+    const matchingKeys = [...this.store.keys()].filter((key) => key.startsWith(opts.prefix));
+    const offset = Number(opts.cursor ?? 0);
+    const objects = matchingKeys
+      .slice(offset, offset + this.listPageSize)
       .map((key) => ({ key }));
-    return { objects, truncated: false };
+    const nextOffset = offset + objects.length;
+    const truncated = nextOffset < matchingKeys.length;
+    return { objects, truncated, cursor: truncated ? String(nextOffset) : undefined };
   }
 
   async delete(keys: string | string[]): Promise<void> {
