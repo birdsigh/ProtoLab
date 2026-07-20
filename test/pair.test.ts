@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { handlePair } from "../src/api/pair";
-import { fakeEnv, SqliteD1 } from "./helpers";
+import { FakeDB, fakeEnv, SqliteD1 } from "./helpers";
 
 const BASE = "https://lab.example.com";
 
@@ -33,6 +33,41 @@ async function createCode(env: ReturnType<typeof fakeEnv>): Promise<string> {
 function poll(env: ReturnType<typeof fakeEnv>, code: string) {
   return handlePair(new Request(`${BASE}/api/pair/${code}`), env);
 }
+
+describe("pairing rate limits", () => {
+  it("returns 429 without inserting when pairing creation is rate limited", async () => {
+    const db = new FakeDB();
+    const env = fakeEnv({
+      DB: db,
+      PAIR_RATE_LIMIT: { limit: async () => ({ success: false }) },
+    });
+
+    const res = await handlePair(
+      new Request(`${BASE}/api/pair`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requester: "test-host" }),
+      }),
+      env,
+    );
+
+    expect(res.status).toBe(429);
+    expect(db.calls).toEqual([]);
+  });
+
+  it("returns 429 without looking up a pairing when polling is rate limited", async () => {
+    const db = new FakeDB();
+    const env = fakeEnv({
+      DB: db,
+      PAIR_POLL_RATE_LIMIT: { limit: async () => ({ success: false }) },
+    });
+
+    const res = await poll(env, "ZZZZZZ");
+
+    expect(res.status).toBe(429);
+    expect(db.calls).toEqual([]);
+  });
+});
 
 /** Mirror what the settings approval handler does: mint a token, stash the
  * plaintext, open a fresh 5-minute claim window. */
