@@ -16,7 +16,7 @@ import { serveGallery, servePrototype } from "./serve";
 import { settingsPage } from "./settings";
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -25,7 +25,7 @@ export default {
       return handlePair(request, env);
     }
     if (path.startsWith("/api/")) {
-      return handleDeploy(request, env, ctx);
+      return handleDeploy(request, env);
     }
 
     // --- Zone 2: management (Access JWT verified in-Worker, always) ---
