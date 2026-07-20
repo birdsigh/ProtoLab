@@ -57,7 +57,12 @@ export async function servePrototype(request: Request, env: Env): Promise<Respon
     const authed = await verifyCookie(env, request, slug, row.cookie_nonce);
     if (!authed) {
       if (request.method === "POST") {
-        const form = await request.formData();
+        let form: FormData;
+        try {
+          form = await request.formData();
+        } catch {
+          return passwordForm(slug, true, 400, "Invalid submission &mdash; try again.");
+        }
         const password = String(form.get("password") ?? "");
         if (await verifyPassword(password, row.password_hash, row.password_salt)) {
           const cookie = await issueCookie(env, slug, row.cookie_nonce);
@@ -90,20 +95,25 @@ export async function servePrototype(request: Request, env: Env): Promise<Respon
   return new Response(object.body, { headers });
 }
 
-function passwordForm(slug: string, failed: boolean): Response {
+function passwordForm(
+  slug: string,
+  failed: boolean,
+  status = failed ? 403 : 401,
+  error = "Wrong password &mdash; try again.",
+): Response {
   const body =
     `<div class="gate">` +
     `<div class="gate-card">` +
     `<svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>` +
     `<h1>This prototype is protected</h1>` +
     `<p class="gate-slug">/${escapeHtml(slug)}/</p>` +
-    (failed ? `<p class="gate-err">Wrong password &mdash; try again.</p>` : "") +
+    (failed ? `<p class="gate-err">${error}</p>` : "") +
     `<form method="post">` +
     `<input type="password" name="password" placeholder="Password" autofocus autocomplete="current-password" aria-label="Password">` +
     `<button class="primary">View prototype</button>` +
     `</form>` +
     `</div></div>`;
-  return html(`${escapeHtml(slug)} — protected`, body, failed ? 403 : 401);
+  return html(`${escapeHtml(slug)} — protected`, body, status);
 }
 
 // Shared page chrome: same design tokens and pre-paint theme resolution as
