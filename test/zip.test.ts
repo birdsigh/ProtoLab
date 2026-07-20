@@ -154,4 +154,22 @@ describe("deletePrototype", () => {
     expect(bucket.store.has("demo/a/b.css")).toBe(false);
     expect(bucket.store.has("demos/index.html")).toBe(true);
   });
+
+  it("deletes R2 keys across paginated listings", async () => {
+    const bucket = new FakeBucket(2);
+    const env = fakeEnv({ BUCKET: bucket });
+    (env.DB as FakeDB).firstResult = { slug: "demo" };
+    bucket.store.set("demo/index.html", { data: enc.encode("x") });
+    bucket.store.set("demo/a.css", { data: enc.encode("x") });
+    bucket.store.set("demo/b.js", { data: enc.encode("x") });
+    bucket.store.set("other/index.html", { data: enc.encode("keep") });
+
+    await deletePrototype(env, "demo");
+
+    expect(bucket.listCalls).toEqual([
+      { prefix: "demo/", cursor: undefined },
+      { prefix: "demo/", cursor: "2" },
+    ]);
+    expect([...bucket.store.keys()]).toEqual(["other/index.html"]);
+  });
 });
