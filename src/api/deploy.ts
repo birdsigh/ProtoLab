@@ -11,7 +11,6 @@ import { deployFromHtml, deployFromZip, deletePrototype, UploadError } from "../
 export async function handleDeploy(
   request: Request,
   env: Env,
-  _ctx: ExecutionContext,
 ): Promise<Response> {
   const token = await verifyBearer(request, env);
   if (!token) return json({ error: "invalid or revoked token" }, 401);
