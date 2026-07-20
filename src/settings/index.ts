@@ -455,7 +455,7 @@ td.title-cell:hover { text-decoration: underline dotted; }
     });
   }
 
-  var SLUG_RE = /^[a-z0-9-]{1,63}$/;
+  var SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,62})$/;
   var RESERVED = { settings: 1, api: 1, "favicon.ico": 1, "robots.txt": 1 };
 
   // ---------- prototypes ----------
