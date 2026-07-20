@@ -46,6 +46,23 @@ describe("deployFromZip", () => {
     expect(bucket.store.has("other/index.html")).toBe(true);
   });
 
+  it("replace semantics: deletes stale keys across paginated listings", async () => {
+    const bucket = new FakeBucket(2);
+    const env = fakeEnv({ BUCKET: bucket });
+    bucket.store.set("demo/old-a.js", { data: enc.encode("stale") });
+    bucket.store.set("demo/old-b.js", { data: enc.encode("stale") });
+    bucket.store.set("demo/old-c.js", { data: enc.encode("stale") });
+    bucket.store.set("other/index.html", { data: enc.encode("untouched") });
+
+    await deployFromZip(env, "demo", makeZip({ "index.html": "<title>x</title>" }));
+
+    expect(bucket.listCalls).toEqual([
+      { prefix: "demo/", cursor: undefined },
+      { prefix: "demo/", cursor: "2" },
+    ]);
+    expect([...bucket.store.keys()]).toEqual(["other/index.html", "demo/index.html"]);
+  });
+
   it("falls back to the slug when index.html has no title", async () => {
     const env = fakeEnv();
     const result = await deployFromZip(env, "untitled", makeZip({ "index.html": "<p>hi</p>" }));
