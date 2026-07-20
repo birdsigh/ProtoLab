@@ -38,7 +38,10 @@ describe("protected prototype password submissions", () => {
     const response = await servePrototype(request, env);
 
     expect(response.status).toBe(400);
-    expect(await response.text()).toContain("Invalid submission");
+    expect(response.headers.get("Content-Type")).toBe("text/html; charset=utf-8");
+    const body = await response.text();
+    expect(body).toContain("Invalid submission");
+    expect(body).toContain('name="password"');
   });
 
   it("redirects and sets a cookie for a valid password", async () => {
