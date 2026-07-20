@@ -18,11 +18,16 @@ interface PrototypeRow {
   cookie_nonce: string | null;
 }
 
+interface GalleryRow {
+  slug: string;
+  title: string;
+}
+
 export async function serveGallery(env: Env): Promise<Response> {
   const { results } = await env.DB.prepare(
     "SELECT slug, title FROM prototypes " +
       "WHERE password_hash IS NULL ORDER BY updated_at DESC",
-  ).all<PrototypeRow>();
+  ).all<GalleryRow>();
 
   const items = results
     .map(
