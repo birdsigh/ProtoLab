@@ -17,6 +17,7 @@ export interface RateLimit {
 export const MAX_ZIP_BYTES = 25 * 1024 * 1024;
 export const MAX_ENTRIES = 500;
 export const MAX_UNPACKED_BYTES = 100 * 1024 * 1024; // zip-bomb guard
+export const MAX_TITLE_LEN = 200;
 export const COOKIE_MAX_AGE_S = 7 * 24 * 60 * 60;
 export const PAIRING_TTL_MS = 5 * 60 * 1000;
 export const PBKDF2_ITERATIONS = 100_000;

@@ -5,7 +5,7 @@
 
 import { unzipSync } from "fflate";
 import type { Env } from "./types";
-import { MAX_ENTRIES, MAX_UNPACKED_BYTES, MAX_ZIP_BYTES } from "./types";
+import { MAX_ENTRIES, MAX_TITLE_LEN, MAX_UNPACKED_BYTES, MAX_ZIP_BYTES } from "./types";
 
 export interface DeployResult {
   slug: string;
@@ -118,7 +118,7 @@ async function deployFiles(
   const existing = await listKeys(env, `${slug}/`);
   await deleteKeys(env, existing.filter((key) => !newKeys.has(key)));
 
-  const title = extractTitle(files.get("index.html")) || slug;
+  const title = extractTitle(files.get("index.html")).slice(0, MAX_TITLE_LEN) || slug;
   const now = new Date().toISOString();
 
   // Title is set only on INSERT — it is editable in settings, so a redeploy

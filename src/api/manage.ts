@@ -16,12 +16,11 @@
 //   POST   /settings/api/pairings/<code>/deny
 
 import type { Env } from "../types";
-import { json, notFound, isValidSlug, PAIRING_TTL_MS } from "../types";
+import { json, notFound, isValidSlug, MAX_TITLE_LEN, PAIRING_TTL_MS } from "../types";
 import { deployFromZip, deletePrototype, UploadError } from "../zip";
 import { mintToken } from "../auth/tokens";
 import { hashPassword, newNonce } from "../auth/password-cookie";
 
-const MAX_TITLE_LEN = 200;
 const MAX_TOKEN_NAME_LEN = 128;
 
 export async function handleManage(request: Request, env: Env): Promise<Response> {

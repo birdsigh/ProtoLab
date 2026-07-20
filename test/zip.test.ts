@@ -69,6 +69,22 @@ describe("deployFromZip", () => {
     expect(result.title).toBe("untitled");
   });
 
+  it("truncates an extracted title to 200 characters", async () => {
+    const env = fakeEnv();
+    const title = "x".repeat(201);
+    const result = await deployFromZip(
+      env,
+      "long-title",
+      makeZip({ "index.html": `<title>  ${title}  </title>` }),
+    );
+
+    expect(result.title).toBe("x".repeat(200));
+    const upsert = (env.DB as FakeDB).calls.find((c) =>
+      c.sql.includes("INSERT INTO prototypes"),
+    );
+    expect(upsert?.args).toContain("x".repeat(200));
+  });
+
   it("rejects zips without a root index.html", async () => {
     const env = fakeEnv();
     await expect(
