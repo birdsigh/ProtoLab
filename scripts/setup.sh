@@ -31,11 +31,13 @@ if [[ "${1:-}" == "--check" ]]; then
   probe() { local c; c=$(curl -s -o /dev/null -w '%{http_code}' "$1") || c="000"; echo "$c"; }
 
   say "checking $BASE_URL"
+  transport_err=0
 
   # /settings must redirect to Access login when unauthenticated
   code=$(probe "$BASE_URL/settings")
   if [[ "$code" == "302" ]]; then ok "/settings redirects to Access login"; else
     fail "/settings returned $code (expected 302 to Access) — management UI may be OPEN"; failures=$((failures+1)); fi
+  [[ "$code" == "000" ]] && transport_err=1
 
   # management API must never return data unauthenticated
   body_code=$(probe "$BASE_URL/settings/api/prototypes")
@@ -43,18 +45,21 @@ if [[ "${1:-}" == "--check" ]]; then
     ok "/settings/api/prototypes denied ($body_code)"
   else
     fail "/settings/api/prototypes returned $body_code — management API may be OPEN"; failures=$((failures+1)); fi
+  [[ "$body_code" == "000" ]] && transport_err=1
 
   # deploy API requires a token
   code=$(probe "$BASE_URL/api/health")
   if [[ "$code" == "401" ]]; then ok "/api/health returns 401 without a token"; else
     fail "/api/health returned $code (expected 401)"; failures=$((failures+1)); fi
+  [[ "$code" == "000" ]] && transport_err=1
 
   # gallery is public
   code=$(probe "$BASE_URL/")
   if [[ "$code" == "200" ]]; then ok "/ serves the gallery"; else
     fail "/ returned $code (expected 200)"; failures=$((failures+1)); fi
+  [[ "$code" == "000" ]] && transport_err=1
 
-  if [[ "$code" == "000" ]]; then
+  if (( transport_err )); then
     echo "  (000 = could not connect at all — a freshly attached custom domain"
     echo "   can take a minute or two to provision DNS + TLS; retry shortly)"
   fi
