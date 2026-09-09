@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { zipSync } from "fflate";
 import { deployFromZip, deployFromHtml, deletePrototype, UploadError } from "../src/zip";
-import { fakeEnv, FakeBucket, FakeDB } from "./helpers";
+import { fakeEnv, FakeBucket, FakeDB, SqliteD1 } from "./helpers";
 
 const enc = new TextEncoder();
 
@@ -61,6 +61,34 @@ describe("deployFromZip", () => {
       { prefix: "demo/", cursor: "2" },
     ]);
     expect([...bucket.store.keys()]).toEqual(["other/index.html", "demo/index.html"]);
+  });
+
+  it("preserves an administrator-edited title when redeployed", async () => {
+    const db = new SqliteD1();
+    const env = fakeEnv({ DB: db });
+
+    await deployFromZip(env, "demo", makeZip({ "index.html": "<title>Initial title</title>" }));
+    db.raw.prepare("UPDATE prototypes SET title = ? WHERE slug = ?").run("Edited title", "demo");
+
+    const replacement = {
+      "index.html": "<title>Replacement title</title>",
+      "assets/app.js": "console.log('replacement');",
+    };
+    const replacementBytes = Object.values(replacement).reduce(
+      (total, content) => total + enc.encode(content).byteLength,
+      0,
+    );
+    const result = await deployFromZip(env, "demo", makeZip(replacement));
+    const row = db.raw
+      .prepare("SELECT title, files, bytes FROM prototypes WHERE slug = ?")
+      .get("demo") as { title: string; files: number; bytes: number };
+
+    expect(result).toMatchObject({ title: "Replacement title", files: 2 });
+    expect(row).toEqual({
+      title: "Edited title",
+      files: 2,
+      bytes: replacementBytes,
+    });
   });
 
   it("falls back to the slug when index.html has no title", async () => {
