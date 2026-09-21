@@ -9,7 +9,7 @@ describe("settings upload slug validation", () => {
     if (!match?.[1]) throw new Error("Settings page is missing SLUG_RE");
     const slugRe = new RegExp(match[1].slice(1, -1));
 
-    for (const slug of ["a", "my-demo", "proto-2", "a".repeat(63)]) {
+    for (const slug of ["a", "my-demo", "proto-2", "demo-", "a".repeat(63)]) {
       expect(slugRe.test(slug), slug).toBe(true);
     }
     for (const slug of ["-demo", "a".repeat(64)]) {

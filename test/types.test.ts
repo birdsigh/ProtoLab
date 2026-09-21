@@ -5,7 +5,7 @@ import { newCode } from "../src/api/pair";
 
 describe("isValidSlug", () => {
   it("accepts normal slugs", () => {
-    for (const s of ["a", "my-idea", "proto-2", "a".repeat(63)]) {
+    for (const s of ["a", "my-idea", "proto-2", "demo-", "a".repeat(63)]) {
       expect(isValidSlug(s), s).toBe(true);
     }
   });
