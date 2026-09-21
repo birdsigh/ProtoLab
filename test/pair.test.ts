@@ -6,6 +6,7 @@
 // semantics so that class of bug fails loudly.
 
 import { beforeEach, describe, expect, it } from "vitest";
+import { handleManage } from "../src/api/manage";
 import { handlePair } from "../src/api/pair";
 import { FakeDB, fakeEnv, SqliteD1 } from "./helpers";
 
@@ -32,6 +33,13 @@ async function createCode(env: ReturnType<typeof fakeEnv>): Promise<string> {
 
 function poll(env: ReturnType<typeof fakeEnv>, code: string) {
   return handlePair(new Request(`${BASE}/api/pair/${code}`), env);
+}
+
+function approve(env: ReturnType<typeof fakeEnv>, code: string) {
+  return handleManage(
+    new Request(`${BASE}/settings/api/pairings/${code}/approve`, { method: "POST" }),
+    env,
+  );
 }
 
 describe("pairing rate limits", () => {
@@ -92,9 +100,8 @@ describe("pairing rate limits", () => {
   );
 });
 
-/** Mirror what the settings approval handler does: mint a token, stash the
- * plaintext, open a fresh 5-minute claim window. */
-function approve(db: SqliteD1, code: string, token = "tok-plain-secret") {
+/** Seed an approved pairing for expiry cleanup tests. */
+function seedApproval(db: SqliteD1, code: string, token = "tok-plain-secret") {
   const now = new Date();
   db.raw
     .prepare(
@@ -143,16 +150,25 @@ describe("pairing lifecycle", () => {
     expect(res.status).toBe(404);
   });
 
-  it("approved code delivers the token exactly once, then scrubs it", async () => {
+  it("management approval delivers the token exactly once, then scrubs it", async () => {
     const code = await createCode(env);
-    approve(db, code, "tok-abc123");
+    const approval = await approve(env, code);
+    expect(approval.status).toBe(200);
+
+    // Capture the exact plaintext written by handleManage before it is
+    // single-use claimed. This fails if approval no longer stores it.
+    const approved = db.raw
+      .prepare("SELECT token_plain, status FROM pairings WHERE code = ?")
+      .get(code) as { token_plain: string | null; status: string };
+    expect(approved.status).toBe("approved");
+    expect(approved.token_plain).toBeTruthy();
 
     // First poll after approval: the token must actually come back.
     // (Regression: RETURNING post-update values ate it.)
     const res = await poll(env, code);
     expect(res.status).toBe(200);
     const body = (await res.json()) as { token: string };
-    expect(body.token).toBe("tok-abc123");
+    expect(body.token).toBe(approved.token_plain);
 
     // Plaintext scrubbed from D1 after delivery.
     const row = db.raw
@@ -181,7 +197,7 @@ describe("pairing lifecycle", () => {
 
   it("lapsed claim window scrubs the plaintext and revokes the minted token", async () => {
     const code = await createCode(env);
-    const tokenId = approve(db, code, "tok-never-delivered");
+    const tokenId = seedApproval(db, code, "tok-never-delivered");
     db.raw
       .prepare("UPDATE pairings SET expires_at = ? WHERE code = ?")
       .run(new Date(Date.now() - 1000).toISOString(), code);
