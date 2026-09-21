@@ -111,6 +111,16 @@ fi
 say "applying schema.sql (idempotent)"
 wrangler d1 execute "$DB_NAME" --remote --file=schema.sql
 
+# CREATE TABLE IF NOT EXISTS does not add columns to an existing database.
+# Upgrade pre-listing installs once, while keeping schema.sql idempotent.
+schema_info=$(wrangler d1 execute "$DB_NAME" --remote \
+  --command="PRAGMA table_info(prototypes)" --json)
+if ! grep -Eq '"name"[[:space:]]*:[[:space:]]*"listed"' <<<"$schema_info"; then
+  say "adding prototype landing-page visibility"
+  wrangler d1 execute "$DB_NAME" --remote \
+    --command="ALTER TABLE prototypes ADD COLUMN listed INTEGER NOT NULL DEFAULT 0"
+fi
+
 say "COOKIE_SECRET"
 if wrangler secret list 2>/dev/null | grep -q "COOKIE_SECRET"; then
   ok "already set"

@@ -122,7 +122,7 @@ async function deployFiles(
   const now = new Date().toISOString();
 
   // Title is set only on INSERT — it is editable in settings, so a redeploy
-  // must not clobber it. created_at, password_*, cookie_nonce are preserved.
+  // must not clobber it. created_at, listed, password_*, cookie_nonce are preserved.
   await env.DB.prepare(
     `INSERT INTO prototypes (slug, title, created_at, updated_at, files, bytes)
      VALUES (?1, ?2, ?3, ?3, ?4, ?5)

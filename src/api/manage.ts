@@ -5,6 +5,7 @@
 //   POST   /settings/api/prototypes/<slug>            (web upload, zip form)
 //   DELETE /settings/api/prototypes/<slug>
 //   PUT    /settings/api/prototypes/<slug>/title      { title }
+//   PUT    /settings/api/prototypes/<slug>/listed     { listed }
 //   PUT    /settings/api/prototypes/<slug>/password   { password }
 //   DELETE /settings/api/prototypes/<slug>/password
 //   GET    /settings/api/tokens
@@ -50,6 +51,10 @@ export async function handleManage(request: Request, env: Env): Promise<Response
     }
     if (seg.length === 3 && second !== undefined && third === "title") {
       if (method === "PUT") return setTitle(request, env, second);
+      return methodNotAllowed();
+    }
+    if (seg.length === 3 && second !== undefined && third === "listed") {
+      if (method === "PUT") return setListed(request, env, second);
       return methodNotAllowed();
     }
     if (seg.length === 3 && second !== undefined && third === "password") {
@@ -103,12 +108,13 @@ interface PrototypeRow {
   updated_at: string;
   files: number;
   bytes: number;
+  listed: number;
   protected: number; // D1 has no booleans; 0/1 from the IS NOT NULL expression
 }
 
 async function listPrototypes(env: Env): Promise<Response> {
   const { results } = await env.DB.prepare(
-    `SELECT slug, title, created_at, updated_at, files, bytes,
+    `SELECT slug, title, created_at, updated_at, files, bytes, listed,
             (password_hash IS NOT NULL) AS protected
      FROM prototypes
      ORDER BY updated_at DESC`,
@@ -120,6 +126,7 @@ async function listPrototypes(env: Env): Promise<Response> {
     updated_at: r.updated_at,
     files: r.files,
     bytes: r.bytes,
+    listed: r.listed === 1,
     protected: r.protected === 1,
   }));
   return json({ prototypes });
@@ -182,6 +189,30 @@ async function setTitle(request: Request, env: Env, slug: string): Promise<Respo
   return json({ ok: true });
 }
 
+async function setListed(request: Request, env: Env, slug: string): Promise<Response> {
+  const body = await readJson(request);
+  const listed = body?.["listed"];
+  if (typeof listed !== "boolean") {
+    return json({ error: "listed must be a boolean" }, 400);
+  }
+  const res = await env.DB.prepare(
+    `UPDATE prototypes SET listed = ?1
+     WHERE slug = ?2 AND (?1 = 0 OR password_hash IS NULL)`,
+  )
+    .bind(listed ? 1 : 0, slug)
+    .run();
+  if (res.meta.changes === 0) {
+    const row = await env.DB.prepare("SELECT password_hash FROM prototypes WHERE slug = ?1")
+      .bind(slug)
+      .first<{ password_hash: string | null }>();
+    if (!row) return notFound("unknown slug");
+    if (listed && row.password_hash !== null) {
+      return json({ error: "password-protected prototypes cannot be listed" }, 409);
+    }
+  }
+  return json({ ok: true, listed });
+}
+
 async function setPassword(request: Request, env: Env, slug: string): Promise<Response> {
   const body = await readJson(request);
   const password = body?.["password"];
@@ -191,7 +222,7 @@ async function setPassword(request: Request, env: Env, slug: string): Promise<Re
   const { hash, salt } = await hashPassword(password);
   const res = await env.DB.prepare(
     `UPDATE prototypes
-     SET password_hash = ?1, password_salt = ?2, cookie_nonce = ?3
+     SET password_hash = ?1, password_salt = ?2, cookie_nonce = ?3, listed = 0
      WHERE slug = ?4`,
   )
     .bind(hash, salt, newNonce(), slug)

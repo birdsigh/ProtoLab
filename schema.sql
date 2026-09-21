@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS prototypes (
   updated_at TEXT NOT NULL,
   files INTEGER NOT NULL DEFAULT 0,  -- maintained by the upload pipeline
   bytes INTEGER NOT NULL DEFAULT 0,  -- maintained by the upload pipeline
+  listed INTEGER NOT NULL DEFAULT 0, -- 1 = shown on the public landing page
   password_hash TEXT,             -- NULL = open (default)
   password_salt TEXT,
   cookie_nonce TEXT               -- rotated on password set/change/remove

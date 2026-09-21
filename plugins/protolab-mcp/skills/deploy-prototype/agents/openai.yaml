@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy Prototype"
+  short_description: "Deploy static HTML through ProtoLab MCP"
+  default_prompt: "Use $deploy-prototype to deploy this static prototype."

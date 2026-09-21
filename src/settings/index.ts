@@ -209,6 +209,8 @@ button.primary:hover {
 .badge.protected { color: var(--warn); background: var(--warn-pale); }
 .badge.open, .badge.active { color: var(--ok); background: var(--ok-pale); }
 .badge.revoked { color: var(--danger); background: var(--danger-pale); }
+.listing-toggle { accent-color: var(--accent); cursor: pointer; }
+.listing-toggle:disabled { cursor: not-allowed; opacity: 0.5; }
 .err {
   display: none;
   margin: 8px 0;
@@ -326,7 +328,7 @@ td.title-cell:hover { text-decoration: underline dotted; }
     <thead>
       <tr>
         <th>Title</th><th>Slug</th><th>Link</th><th>Updated</th>
-        <th>Size</th><th>Access</th><th></th>
+        <th>Size</th><th>Access</th><th>Landing</th><th></th>
       </tr>
     </thead>
     <tbody id="proto-body"></tbody>
@@ -480,7 +482,7 @@ td.title-cell:hover { text-decoration: underline dotted; }
     protoBody.textContent = "";
     if (!list.length) {
       protoBody.appendChild(el("tr", null, [
-        el("td", { colspan: "7", "class": "empty", text: "No prototypes yet." })
+        el("td", { colspan: "8", "class": "empty", text: "No prototypes yet." })
       ]));
       return;
     }
@@ -504,6 +506,18 @@ td.title-cell:hover { text-decoration: underline dotted; }
       ? el("span", { "class": "badge protected", text: "protected" })
       : el("span", { "class": "badge open", text: "open" });
 
+    var listingToggle = el("input", {
+      type: "checkbox",
+      "class": "listing-toggle",
+      "aria-label": "List " + p.slug + " on landing page",
+      title: p.protected ? "Remove the password before listing" : "List on landing page"
+    });
+    listingToggle.checked = Boolean(p.listed);
+    listingToggle.disabled = Boolean(p.protected);
+    listingToggle.addEventListener("change", function () {
+      setListed(p, listingToggle);
+    });
+
     var upBtn = el("button", { type: "button", text: "Upload zip", onclick: function () {
       pickZipFile(function (file) { uploadVersion(p.slug, file); });
     }});
@@ -525,8 +539,25 @@ td.title-cell:hover { text-decoration: underline dotted; }
       el("td", { "class": "num", text: fmtBytes(p.bytes) + " \\u00b7 " + p.files +
         (p.files === 1 ? " file" : " files") }),
       el("td", null, [badge]),
+      el("td", null, [listingToggle]),
       el("td", { "class": "actions" }, [upBtn, pwBtn, delBtn])
     ]);
+  }
+
+  function setListed(p, toggle) {
+    var next = toggle.checked;
+    toggle.disabled = true;
+    clearErr(protoErr);
+    api("PUT", "/settings/api/prototypes/" + encodeURIComponent(p.slug) + "/listed",
+      { json: { listed: next } }
+    ).then(function () {
+      p.listed = next;
+      toggle.disabled = Boolean(p.protected);
+    }).catch(function (e) {
+      toggle.checked = Boolean(p.listed);
+      toggle.disabled = Boolean(p.protected);
+      showErr(protoErr, "Updating landing-page listing for \\"" + p.slug + "\\" failed: " + e.message);
+    });
   }
 
   function editTitle(td, p) {
@@ -602,7 +633,7 @@ td.title-cell:hover { text-decoration: underline dotted; }
   }
 
   function removePassword(slug) {
-    if (!window.confirm("Remove the password from \\"" + slug + "\\"? It becomes public.")) return;
+    if (!window.confirm("Remove the password from \\"" + slug + "\\"? It becomes accessible by URL.")) return;
     clearErr(protoErr);
     api("DELETE", "/settings/api/prototypes/" + encodeURIComponent(slug) + "/password")
       .then(function () { return loadPrototypes(); })

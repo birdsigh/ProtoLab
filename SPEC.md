@@ -22,7 +22,7 @@ A custom domain on a Cloudflare zone is **required** (Access cannot protect `*.w
 
 ## Routing
 
-- `GET /` — public gallery, rendered dynamically from D1. Password-protected slugs are hidden from it.
+- `GET /` — public gallery, rendered dynamically from D1. Only explicitly listed, non-password-protected slugs appear.
 - `GET /<slug>/` and `GET /<slug>/<path>` — serve from R2. `/<slug>/` and any path ending in `/` rewrite to `index.html`. Content-Type comes from R2 `httpMetadata` set at upload. Unknown slug or path → 404.
 - `GET /settings` — management UI. Behind Access.
 - `/settings/api/*` — management API (Zone 2). Behind the same Access app as `/settings`, so `Cf-Access-Jwt-Assertion` is injected on every call and re-verified in the Worker.
@@ -40,6 +40,7 @@ CREATE TABLE prototypes (
   updated_at TEXT NOT NULL,
   files INTEGER NOT NULL,         -- maintained by the upload pipeline
   bytes INTEGER NOT NULL,         -- maintained by the upload pipeline
+  listed INTEGER NOT NULL DEFAULT 0, -- opt-in public gallery listing
   password_hash TEXT,             -- NULL = open (default)
   password_salt TEXT,
   cookie_nonce TEXT               -- rotated on password set/change/remove; invalidates cookies
@@ -87,10 +88,11 @@ Same-origin calls from the settings UI. Because these paths sit inside the Acces
 
 All non-GET requests must additionally carry `X-ProtoLab: 1` (CSRF guard). Access injects a valid JWT for any request bearing the admin's `CF_Authorization` cookie — including cross-site form POSTs — so the JWT alone does not prove the request came from the settings UI. HTML forms cannot set custom headers and cross-origin fetch fails the preflight, so the header does.
 
-- `GET /settings/api/prototypes` — list with title, dates, protection status, size/file count (from D1).
+- `GET /settings/api/prototypes` — list with title, dates, protection/listing status, size/file count (from D1).
 - `POST /settings/api/prototypes/<slug>` — web upload (zip via form). Same pipeline as Zone 1.
 - `DELETE /settings/api/prototypes/<slug>`
 - `PUT /settings/api/prototypes/<slug>/title` — body `{ title }`.
+- `PUT /settings/api/prototypes/<slug>/listed` — body `{ listed: boolean }`. New prototypes default to hidden; protected prototypes cannot be listed.
 - `PUT /settings/api/prototypes/<slug>/password` — set password (salted PBKDF2 hash; see Prototype passwords).
 - `DELETE /settings/api/prototypes/<slug>/password` — back to open.
 - `GET /settings/api/tokens`, `POST /settings/api/tokens` (manual mint, named), `DELETE /settings/api/tokens/<id>` (revoke), `PUT /settings/api/tokens/<id>/name` (rename, body `{ name }`).
@@ -111,13 +113,13 @@ Open by default. When a password is set:
 2. Correct password → `Set-Cookie: plab_<slug>=<HMAC-signed value>; Path=/<slug>; HttpOnly; Secure; SameSite=Lax; Max-Age=604800` (7 days, tunable). Signed with a Worker secret (`COOKIE_SECRET`); payload includes slug + expiry + the current `cookie_nonce`.
 3. Setting, changing, or removing the password rotates `cookie_nonce`, invalidating outstanding cookies.
 
-Password hashing is PBKDF2-SHA-256, 100,000 iterations, via WebCrypto (Workers has no scrypt). These are low-stakes prototype gates, not user accounts. Never accept the password via query string. Protected slugs are omitted from the public gallery.
+Password hashing is PBKDF2-SHA-256, 100,000 iterations, via WebCrypto (Workers has no scrypt). These are low-stakes prototype gates, not user accounts. Never accept the password via query string. Protected slugs are omitted from the public gallery, and setting a password switches listing off.
 
 ## Settings page (`/settings`)
 
 Single page served by the Worker (static asset or inline; no build step preferred). Sections:
 
-- **Prototypes** — table: title, slug, live URL, updated, size/files, open/protected. Actions: delete (confirm), edit title, set/remove password, upload new version.
+- **Prototypes** — table: title, slug, live URL, updated, size/files, open/protected, landing-page toggle. Actions: delete (confirm), edit title, set/remove password, upload new version.
 - **Upload** — form: slug + zip (or folder via `webkitdirectory`, zipped client-side). Same validation as the API.
 - **Tokens** — table: name, created, last used, active/revoked. Actions: mint named token (plaintext shown once), revoke.
 - **Pairing requests** — pending codes with requester hostname and countdown; approve / deny. Approve by matching the code the skill printed, not the hostname (hostnames are self-reported).

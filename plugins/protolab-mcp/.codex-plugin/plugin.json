@@ -1,0 +1,23 @@
+{
+  "name": "protolab-mcp",
+  "version": "0.2.0",
+  "description": "Deploy and manage static HTML prototypes through a local ProtoLab MCP server.",
+  "author": {
+    "name": "Sprettynice"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "ProtoLab MCP",
+    "shortDescription": "Deploy static HTML prototypes from any project.",
+    "longDescription": "Deploy and remove static HTML prototypes using a host-side MCP server and one global ProtoLab login.",
+    "developerName": "Sprettynice",
+    "category": "Developer Tools",
+    "capabilities": ["Deploy", "Write"],
+    "defaultPrompt": "Check my ProtoLab status."
+  },
+  "mcpServers": {
+    "protolab": {
+      "command": "./server/protolab_mcp.py"
+    }
+  }
+}

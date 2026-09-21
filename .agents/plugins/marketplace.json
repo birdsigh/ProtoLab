@@ -1,0 +1,20 @@
+{
+  "name": "protolab",
+  "interface": {
+    "displayName": "ProtoLab"
+  },
+  "plugins": [
+    {
+      "name": "protolab-mcp",
+      "source": {
+        "source": "local",
+        "path": "./plugins/protolab-mcp"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

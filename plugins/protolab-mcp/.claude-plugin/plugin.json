@@ -1,0 +1,14 @@
+{
+  "name": "protolab-mcp",
+  "description": "Deploy and manage static HTML prototypes through a local ProtoLab MCP server.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Sprettynice"
+  },
+  "homepage": "https://github.com/birdsigh/ProtoLab",
+  "mcpServers": {
+    "protolab": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/server/protolab_mcp.py"
+    }
+  }
+}

@@ -26,7 +26,7 @@ interface GalleryRow {
 export async function serveGallery(env: Env): Promise<Response> {
   const { results } = await env.DB.prepare(
     "SELECT slug, title FROM prototypes " +
-      "WHERE password_hash IS NULL ORDER BY updated_at DESC",
+      "WHERE listed = 1 AND password_hash IS NULL ORDER BY updated_at DESC",
   ).all<GalleryRow>();
 
   const items = results

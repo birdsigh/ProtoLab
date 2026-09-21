@@ -12,7 +12,7 @@
 
 A single Cloudflare Worker that hosts throwaway HTML prototypes.
 Prototype files live in R2, metadata in D1. The Worker serves the
-prototypes, a public gallery at `/`, and its own management page at
+prototypes, an opt-in public gallery at `/`, and its own management page at
 `/settings` (behind Cloudflare Access). Deploying a prototype is one
 authenticated HTTP call from anywhere — no repo checkout, no wrangler.
 
