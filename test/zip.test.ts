@@ -178,9 +178,9 @@ describe("deployFromHtml", () => {
     const env = fakeEnv();
     const html = new Uint8Array(MAX_UNPACKED_BYTES + 1);
 
+    await expect(deployFromHtml(env, "single", html)).rejects.toBeInstanceOf(UploadError);
     await expect(deployFromHtml(env, "single", html)).rejects.toMatchObject({
       status: 413,
-      message: "html exceeds upload size cap",
     });
   });
 });
