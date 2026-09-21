@@ -367,7 +367,7 @@ td.title-cell:hover { text-decoration: underline dotted; }
   </table>
   <p class="hint">Click a name to rename it.</p>
   <form class="row" id="mint-form" style="margin-top:10px">
-    <input type="text" id="mint-name" placeholder="token name" autocomplete="off">
+    <input type="text" id="mint-name" placeholder="token name" autocomplete="off" maxlength="128">
     <button type="submit" class="primary">Mint token</button>
   </form>
   <div class="token-reveal" id="token-reveal">
