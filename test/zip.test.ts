@@ -98,6 +98,19 @@ describe("deployFromZip", () => {
     expect(result.title).toBe("untitled");
   });
 
+  it("decodes common named and numeric entities in titles", async () => {
+    const env = fakeEnv();
+    const result = await deployFromZip(
+      env,
+      "tom-jerry",
+      makeZip({
+        "index.html": "<title>Tom &amp; Jerry &lt; &#x1f600; &#169; &quot;Cartoon&quot;</title>",
+      }),
+    );
+
+    expect(result.title).toBe('Tom & Jerry < 😀 © "Cartoon"');
+  });
+
   it("truncates an extracted title to 200 characters", async () => {
     const env = fakeEnv();
     const title = "x".repeat(201);
