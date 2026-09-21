@@ -75,7 +75,7 @@ export async function deployFromHtml(
   html: Uint8Array,
 ): Promise<DeployResult> {
   if (html.byteLength > MAX_UNPACKED_BYTES) {
-    throw new UploadError("decompressed size cap exceeded", 413);
+    throw new UploadError("html exceeds upload size cap", 413);
   }
   const files = new Map<string, Uint8Array>([["index.html", html]]);
   return deployFiles(env, slug, files);

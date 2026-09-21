@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { zipSync } from "fflate";
 import { deployFromZip, deployFromHtml, deletePrototype, UploadError } from "../src/zip";
+import { MAX_UNPACKED_BYTES } from "../src/types";
 import { fakeEnv, FakeBucket, FakeDB, SqliteD1 } from "./helpers";
 
 const enc = new TextEncoder();
@@ -158,6 +159,16 @@ describe("deployFromHtml", () => {
     const result = await deployFromHtml(env, "single", enc.encode("<title>One</title>"));
     expect(result).toMatchObject({ slug: "single", files: 1, title: "One" });
     expect(bucket.store.has("single/index.html")).toBe(true);
+  });
+
+  it("rejects HTML over the upload size cap", async () => {
+    const env = fakeEnv();
+    const html = new Uint8Array(MAX_UNPACKED_BYTES + 1);
+
+    await expect(deployFromHtml(env, "single", html)).rejects.toMatchObject({
+      status: 413,
+      message: "html exceeds upload size cap",
+    });
   });
 });
 
