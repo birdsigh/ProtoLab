@@ -30,9 +30,13 @@ export async function handleDeploy(
 
   try {
     if (request.method === "PUT") {
+      const contentType = request.headers.get("Content-Type")?.split(";", 1)[0]?.trim().toLowerCase();
+      if (contentType !== "text/html" && contentType !== "application/zip") {
+        return json({ error: "unsupported content type; expected application/zip or text/html" }, 415);
+      }
+
       const body = new Uint8Array(await request.arrayBuffer());
-      const contentType = request.headers.get("Content-Type") ?? "";
-      const result = contentType.includes("text/html")
+      const result = contentType === "text/html"
         ? await deployFromHtml(env, slug, body)
         : await deployFromZip(env, slug, body);
       // Contract per AGENTS.md: { url, slug, files, bytes } — no extras.
