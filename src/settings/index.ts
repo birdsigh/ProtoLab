@@ -790,8 +790,8 @@ td.title-cell:hover { text-decoration: underline dotted; }
     uploadOk.style.display = "none";
     var slug = slugInput.value.trim().toLowerCase();
     if (!SLUG_RE.test(slug) || RESERVED[slug] || slug.charAt(0) === "_") {
-      showErr(uploadErr, "Invalid slug: lowercase letters, digits, and hyphens, " +
-        "1-63 chars, not a reserved name.");
+      showErr(uploadErr, "Invalid slug: must start with a lowercase letter or digit; " +
+        "then use lowercase letters, digits, or hyphens (1-63 chars), not a reserved name.");
       return;
     }
     var getBlob;
