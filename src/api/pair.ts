@@ -54,7 +54,8 @@ export async function handlePair(request: Request, env: Env): Promise<Response> 
     return json({ code, expires_at: expiresAt });
   }
 
-  const m = url.pathname.match(/^\/api\/pair\/([A-Z2-9]+)$/i);
+  // Only generated six-character codes reach the poll limiter or D1.
+  const m = url.pathname.match(/^\/api\/pair\/([23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6})$/i);
   if (m && request.method === "GET") {
     // Rate-limit polls too: legit clients poll ~30/min; anything faster
     // is brute-forcing codes (each guess would otherwise be a free D1 hit

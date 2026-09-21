@@ -67,6 +67,29 @@ describe("pairing rate limits", () => {
     expect(res.status).toBe(429);
     expect(db.calls).toEqual([]);
   });
+
+  it.each(["ZZZZZ", "ZZZZZZZ", "ABCIO1", "abcdef"]) (
+    "rejects malformed poll code %s before rate limiting or D1",
+    async (code) => {
+      const db = new FakeDB();
+      let pollLimitCalls = 0;
+      const env = fakeEnv({
+        DB: db,
+        PAIR_POLL_RATE_LIMIT: {
+          limit: async () => {
+            pollLimitCalls++;
+            return { success: true };
+          },
+        },
+      });
+
+      const res = await poll(env, code);
+
+      expect(res.status).toBe(404);
+      expect(pollLimitCalls).toBe(0);
+      expect(db.calls).toEqual([]);
+    },
+  );
 });
 
 /** Mirror what the settings approval handler does: mint a token, stash the
@@ -106,6 +129,12 @@ describe("pairing lifecycle", () => {
   it("pending code polls 202", async () => {
     const code = await createCode(env);
     const res = await poll(env, code);
+    expect(res.status).toBe(202);
+  });
+
+  it("accepts lowercase valid codes", async () => {
+    const code = await createCode(env);
+    const res = await poll(env, code.toLowerCase());
     expect(res.status).toBe(202);
   });
 
