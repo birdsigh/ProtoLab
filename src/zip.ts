@@ -162,7 +162,31 @@ function extractTitle(indexHtml: Uint8Array | undefined): string {
   if (!indexHtml) return "";
   const text = new TextDecoder().decode(indexHtml); // utf-8, non-fatal (defaults)
   const m = text.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  return m?.[1]?.trim() ?? "";
+  return decodeTitleEntities(m?.[1]?.trim() ?? "");
+}
+
+/** Decode the small set of entities commonly used in HTML titles. */
+function decodeTitleEntities(title: string): string {
+  const named: Record<string, string> = {
+    amp: "&",
+    apos: "'",
+    gt: ">",
+    lt: "<",
+    nbsp: "\u00a0",
+    quot: '"',
+  };
+
+  return title.replace(/&(?:#(x[0-9a-f]+|\d+)|([a-z]+));/gi, (entity, numeric, name) => {
+    if (numeric) {
+      const value = numeric[0].toLowerCase() === "x"
+        ? Number.parseInt(numeric.slice(1), 16)
+        : Number.parseInt(numeric, 10);
+      return value <= 0x10ffff && (value < 0xd800 || value > 0xdfff)
+        ? String.fromCodePoint(value)
+        : entity;
+    }
+    return named[name.toLowerCase()] ?? entity;
+  });
 }
 
 function validateEntries(entries: Record<string, Uint8Array>): Map<string, Uint8Array> {
