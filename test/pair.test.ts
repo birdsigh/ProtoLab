@@ -76,7 +76,7 @@ describe("pairing rate limits", () => {
     expect(db.calls).toEqual([]);
   });
 
-  it.each(["ZZZZZ", "ZZZZZZZ", "ABCIO1", "abcdef"]) (
+  it.each(["ZZZZZ", "ZZZZZZZ", "ABCIO1", "abcde0"]) (
     "rejects malformed poll code %s before rate limiting or D1",
     async (code) => {
       const db = new FakeDB();
